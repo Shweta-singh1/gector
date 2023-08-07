@@ -110,20 +110,20 @@ class GecBERTModel(object):
         print("Model is restored", file=sys.stderr)
 
     def predict(self, batches):
-        t11 = time()
+        t11 = time() # to record the start time of the prediction process
         predictions = []
         for batch, model in zip(batches, self.models):
             batch = util.move_to_device(batch.as_tensor_dict(), 0 if torch.cuda.is_available() else -1)
             with torch.no_grad():
-                prediction = model.forward(**batch)
-            predictions.append(prediction)
+                prediction = model.forward(**batch)#probably perform the forward pass
+            predictions.append(prediction)# stores the prediction in  prediction list 
 
         preds, idx, error_probs = self._convert(predictions)
         t55 = time()
         if self.log:
             print(f"Inference time {t55 - t11}")
         return preds, idx, error_probs
-
+#predict function 
     def get_token_action(self, token, index, prob, sugg_token):
         """Get lost of suggested actions for token."""
         # cases when we don't need to do anything
@@ -187,10 +187,10 @@ class GecBERTModel(object):
         return batches
 
     def _convert(self, data):
-        all_class_probs = torch.zeros_like(data[0]['class_probabilities_labels'])
-        error_probs = torch.zeros_like(data[0]['max_error_probability'])
+        all_class_probs = torch.zeros_like(data[0]['class_probabilities_labels'])# initialize as tensor of the size prediction[0]
+        error_probs = torch.zeros_like(data[0]['max_error_probability'])#initialize as tensor of the size prediction[0]
         for output, weight in zip(data, self.model_weights):
-            all_class_probs += weight * output['class_probabilities_labels'] / sum(self.model_weights)
+            all_class_probs += weight * output['class_probabilities_labels'] / sum(self.model_weights)#
             error_probs += weight * output['max_error_probability'] / sum(self.model_weights)
 
         max_vals = torch.max(all_class_probs, dim=-1)
